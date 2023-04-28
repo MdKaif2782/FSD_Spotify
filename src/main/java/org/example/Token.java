@@ -17,8 +17,8 @@ public class Token {
     public static String getAccessToken() throws IOException, ParseException {
         String token = null;
         // Replace these with your actual client ID and secret
-        String clientId = "2205258a623f4954b02032029fa7e2b2";
-        String clientSecret = "fc8cfbe5c95f4d3bb9bd03de542819a0";
+        String clientId = System.getenv("CLIENT_ID");
+        String clientSecret = System.getenv("CLIENT_SECRET");
 
         // Encode the client ID and secret as a Base64-encoded string
         String authHeader = Base64.getEncoder().encodeToString((clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8));
@@ -48,12 +48,10 @@ public class Token {
 
             // Extract the access token from the response body
             String responseBody = responseBuilder.toString();
-            System.out.println(responseBody);
+            System.out.println("\n\n"+responseBody+"\n\n");
             JSONParser parser = new JSONParser();
             JSONObject json = (JSONObject) parser.parse(responseBody);
-            String accessToken = json.get("access_token").toString();
-            System.out.println("\n\nAccess token: " + accessToken);
-            token = accessToken;
+            token = json.get("access_token").toString();
         }
 
         // Disconnect the connection
