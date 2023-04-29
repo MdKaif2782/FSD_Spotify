@@ -15,9 +15,24 @@ dependencies {
     //json simple
     // https://mvnrepository.com/artifact/com.googlecode.json-simple/json-simple
     implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+    // Selenium WebDriver
+    implementation 'org.seleniumhq.selenium:selenium-java:4.8.1'
 
+    // ChromeDriver for headless Chrome
+    implementation 'org.seleniumhq.selenium:selenium-chrome-driver:4.8.1'
+
+
+}
+run {
+    // Use headless Chrome when running the application
+    systemProperty 'webdriver.chrome.driver', 'path/to/chromedriver'
+    systemProperty 'webdriver.chrome.args', ['--headless', '--disable-gpu']
 }
 
 test {
+    // Use headless Chrome when running tests
+    systemProperty 'webdriver.chrome.driver', 'path/to/chromedriver'
+    systemProperty 'webdriver.chrome.args', ['--headless', '--disable-gpu']
     useJUnitPlatform()
 }
+

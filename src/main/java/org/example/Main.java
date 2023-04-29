@@ -6,7 +6,6 @@ import java.io.IOException;
 
 public class Main {
     public static void main(String[] args) throws IOException, ParseException {
-        String token = Token.getAccessToken();
-        System.out.println(token);
+        Token.getAuthCode("user-library-read");
     }
 }
