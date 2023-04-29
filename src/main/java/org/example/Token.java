@@ -8,10 +8,13 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 
+import java.awt.*;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Scanner;
+import java.util.UUID;
 
 public class Token {
     public static String getAccessToken() throws IOException, ParseException {
@@ -62,43 +65,90 @@ public class Token {
 
         return null;
     }
-    public static String getAuthCode(String scope){
-        String baseUrl = "https://accounts.spotify.com/authorize";
-        String clientId = System.getenv("CLIENT_ID");
-        String response_type = "code";
+    public static String getScopedToken() throws URISyntaxException, IOException, ParseException {
+        //Read Json
+        JSONParser parser = new JSONParser();
+
+        FileReader fileReader = new FileReader("src/main/java/org/example/scoped_token.json");
+
+        // read file and parse JSON object
+        Object obj = parser.parse(fileReader);
+        JSONObject scopedToken = (JSONObject) obj;
+
+        // extract values from JSON object
+        String accessToken = (String) scopedToken.get("access_token");
+        String refreshToken = (String) scopedToken.get("refresh_token");
+        Long timestamp = (Long) scopedToken.get("timestamp");
+
+        if (System.currentTimeMillis()<(timestamp+3600*1000)) return accessToken;
+
+
+        String client_id = System.getenv("CLIENT_ID");
+        String client_secret = System.getenv("CLIENT_SECRET");
         String redirect_uri = "https://github.com/MdKaif2782";
-        String url = baseUrl+"?"
-                    +"client_id="+clientId
-                    +"&response_type="+response_type
-                    +"&redirect_uri="+redirect_uri
-                    +"&scope="+scope;
-        // Set the path to the ChromeDriver executable
-        System.setProperty("webdriver.chrome.driver", "/path/to/chromedriver");
+        String scope = "user-library-read";
+        String state = UUID.randomUUID().toString();;
+        String response_type = "code";
+        String authorize_url = "https://accounts.spotify.com/authorize";
+        String token_url = "https://accounts.spotify.com/api/token";
 
-        // Create a new instance of the ChromeDriver
-        WebDriver driver = new ChromeDriver();
+        // Step 1: Send user to authorize URL to grant access
+        String url = authorize_url + "?client_id=" + client_id + "&redirect_uri=" + redirect_uri
+                + "&scope=" + scope + "&state=" + state + "&response_type=" + response_type;
+        System.out.println("Please go to the following URL to grant access: ");
+        System.out.println(url);
 
-        // Navigate to the Spotify login page
-        driver.get(url);
+        String authorization_code = null;
+        System.out.println("Paste the url you are redirected to");
+        Scanner scanner = new Scanner(System.in);
+        String inputUrl = scanner.nextLine();
+        String splits[] = inputUrl.split("code=");
+        String split2[] = splits[splits.length-1].split("&");
+        authorization_code = split2[0];
+        System.out.println("Authorization code == "+authorization_code);
 
-        // Find the username and password fields and input your credentials
-        WebElement usernameField = driver.findElement(By.id("login-username"));
-        usernameField.sendKeys("your_username");
-        WebElement passwordField = driver.findElement(By.id("login-password"));
-        passwordField.sendKeys("your_password");
 
-        // Click the login button
-        WebElement loginButton = driver.findElement(By.id("login-button"));
-        loginButton.click();
+        // Step 3: Exchange authorization code for access token and refresh token
+        String encoded_client_id_secret = Base64.getEncoder().encodeToString((client_id + ":"+client_secret).getBytes());
+        URL tokenEndpoint = new URL(token_url);
+        HttpURLConnection conn = (HttpURLConnection) tokenEndpoint.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Authorization", "Basic " + encoded_client_id_secret);
+        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+        conn.setDoOutput(true);
+        DataOutputStream out = new DataOutputStream(conn.getOutputStream());
+        out.writeBytes("grant_type=authorization_code&code=" + authorization_code + "&redirect_uri=" + redirect_uri);
+        out.flush();
+        out.close();
 
-        // Wait for the page to load and retrieve the redirected URL
-        String redirectedUrl = driver.getCurrentUrl();
+        // Step 4: Read and print access token and refresh token from response
+        BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        StringBuilder response = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            response.append(line);
+        }
+        reader.close();
+        String access_token = response.toString().split("\"access_token\":\"")[1].split("\",\"token_type\"")[0];
+        String refresh_token = response.toString().split("\"refresh_token\":\"")[1].split("\",\"scope\"")[0];
+        System.out.println("\n\n\nAccess Token: " + access_token);
+        System.out.println("Refresh Token: " + refresh_token);
 
-        // Print the redirected URL to the console
-        System.out.println("Redirected URL: " + redirectedUrl);
+        //save to json
+        // create JSON object
+        JSONObject tokens = new JSONObject();
+        tokens.put("access_token", access_token);
+        tokens.put("refresh_token", refresh_token);
+        tokens.put("timestamp", System.currentTimeMillis());
 
-        // Close the browser window
-        driver.quit();
+        // write JSON object to file
+        try (FileWriter file = new FileWriter("src/main/java/org/example/scoped_token.json")) {
+            file.write(tokens.toJSONString());
+            System.out.println("JSON object written to file successfully.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         return null;
     }
 }

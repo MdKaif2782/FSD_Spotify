@@ -21,18 +21,8 @@ dependencies {
     // ChromeDriver for headless Chrome
     implementation 'org.seleniumhq.selenium:selenium-chrome-driver:4.8.1'
 
-
+    test {
+        // Use headless Chrome when running tests
+        useJUnitPlatform()
+    }
 }
-run {
-    // Use headless Chrome when running the application
-    systemProperty 'webdriver.chrome.driver', 'path/to/chromedriver'
-    systemProperty 'webdriver.chrome.args', ['--headless', '--disable-gpu']
-}
-
-test {
-    // Use headless Chrome when running tests
-    systemProperty 'webdriver.chrome.driver', 'path/to/chromedriver'
-    systemProperty 'webdriver.chrome.args', ['--headless', '--disable-gpu']
-    useJUnitPlatform()
-}
-
