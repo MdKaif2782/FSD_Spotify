@@ -1,10 +1,12 @@
 package org.example;
 
+import com.google.gson.Gson;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
@@ -13,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Songs {
-    public static ArrayList<String> getList() throws IOException, ParseException, URISyntaxException {
+    public static ArrayList<String> getSongList() throws IOException, ParseException, URISyntaxException {
         ArrayList<String> songs = new ArrayList<>();
         String accessToken = Token.getScopedToken();
         // Set up the connection to the Spotify API endpoint
@@ -41,8 +43,19 @@ public class Songs {
             System.out.println((i+1)+". "+name);
             songs.add(name);
         }
+        Gson gson = new Gson();
+        String writeJson = gson.toJson(songs);
 
+        // Write JSON string to file
+        try {
+            FileWriter fileWriter = new FileWriter("output.json");
+            fileWriter.write(writeJson);
+            fileWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         return songs;
     }
+
 }
