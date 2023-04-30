@@ -3,6 +3,7 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+src/main/java/org/example/scoped_token.json
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
